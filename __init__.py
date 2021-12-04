@@ -12,7 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import bpy
-from bpy.types import( 
+from bpy.types import(
     PropertyGroup,
     Operator,
     )
@@ -27,31 +27,29 @@ from bpy.props import(
 from . import display
 from . import utils
 from . import cmd
+from . import cc3pipeline
 
-# from . import modifierlist
-# from . import rigtools
-# from . import importexport
-# from . import objectlist
-# from . import idmaptools
-# from . import ue4tools
+
 
 imp.reload(display)
 imp.reload(utils)
 imp.reload(cmd)
-# imp.reload(modifierlist)
-# imp.reload(rigtools)
-# imp.reload(importexport)
-# imp.reload(objectlist)
-# imp.reload(idmaptools)
-# imp.reload(ue4tools)
+imp.reload(cc3pipeline)
+
 
 bl_info = {
 "name": "cyatools sub",
 "author": "Takehito Tsuchiya",
-"version": (0, 1),
-"blender": (2, 80, 3),
+"version": (0, 1.1),
+"blender": (2, 93, 1),
+#"location" : "CYA",
+"location": "Shader Editor",
+"warning": "",
+"category": "Node",
+
 "description": "cyatools sub",
-"category": "Object"}
+#"category": "Object"
+}
 
 
 class CYATOOLSSUB_Props_OA(PropertyGroup):
@@ -64,15 +62,19 @@ class CYATOOLSSUB_Props_OA(PropertyGroup):
 #---------------------------------------------------------------------------------------
 #UI
 #---------------------------------------------------------------------------------------
-class CYATOOLSSUB_PT_toolPanel(utils.panel):   
+class CYATOOLSSUB_PT_toolPanel(utils.panel):
     bl_label ='SUB Tools'
+    bl_category = "Node"
+    bl_idname = "CYATOOLSSUB_PT_toolPanel"
+    bl_space_type = "NODE_EDITOR"
+    bl_region_type = "UI"
+
     def draw(self, context):
         props = bpy.context.scene.cyatoolssub_oa
         layout=self.layout
 
         box = layout.box()
         box.label( text = 'display toggle' )
-
 
         row1 = box.row()
         box2 = row1.box()
@@ -81,7 +83,7 @@ class CYATOOLSSUB_PT_toolPanel(utils.panel):
         row2.prop(props, "const_bool" , icon='CONSTRAINT')#コンストレインのON、OFF
         row2.prop(props, "showhide_bool" , icon='EMPTY_DATA')#選択した子供のみ表示
 
-        
+
         box2.prop(props, "focus_bool")
 
 
@@ -93,54 +95,28 @@ class CYATOOLSSUB_PT_toolPanel(utils.panel):
         row1.operator( "cyatoolssub.preserve_collections" , icon = 'IMPORT')
         row1.operator( "cyatoolssub.collections_hide" )
 
+        #CC3パイプラインツール
+        box = layout.box()
+        box.label( text = 'CC3 pipeline' )
+        row1 = box.row()
 
-        #self.layout.operator("cyatools.apply", icon='BLENDER')
-        # self.layout.operator("cyatools.modelingtools", icon='BLENDER')
-        # self.layout.operator("cyatools.cya_helper_tools", icon='BLENDER')
-        # self.layout.operator("cyatools.curvetools", icon='BLENDER')
-        # self.layout.operator("cyatools.rename", icon='BLENDER')
-        # self.layout.operator("cyatools.skinningtools", icon='BLENDER')
-        # self.layout.operator("cyatools.etc", icon='BLENDER')
+        row1.operator( "cyatoolssub.collect_textures" )
+        row1.operator( "cyatoolssub.save_textures" )
+        row1.operator( "cyatoolssub.save_uv" )
+        row1.operator( "cyatoolssub.load_uv" )
 
 
-# #メッセージダイアログ
-# #スペース区切りで改行する
-# class CYATOOLS_MT_messagebox(bpy.types.Operator):
-#     bl_idname = "cyatools.messagebox"
-#     bl_label = ""
- 
-#     message : bpy.props.StringProperty(
-#         name = "message",
-#         description = "message",
-#         default = ''
-#     )
- 
+
+# class CYATOOLSSUB_OT_instance_invert_last_selection(Operator):
+#     """Inverse selected objects using last selection."""
+#     bl_idname = "cyatoolssub.instance_invert_last_selection"
+#     bl_label = "invert using last selection"
 #     def execute(self, context):
-#         self.report({'INFO'}, self.message)
-#         print(self.message)
+#         cmd.invert_last_selection()
 #         return {'FINISHED'}
- 
-#     def invoke(self, context, event):
-#         return context.window_manager.invoke_props_dialog(self, width = 400)
- 
-#     def draw(self, context):
-#         buf = self.message.split(' ')
-#         for s in buf:
-#             self.layout.label(text = s)
-#         #self.layout.label("")
-
-
-
-class CYATOOLSSUB_OT_instance_invert_last_selection(Operator):
-    """Inverse selected objects using last selection."""
-    bl_idname = "cyatools.instance_invert_last_selection"
-    bl_label = "invert using last selection"
-    def execute(self, context):
-        cmd.invert_last_selection()
-        return {'FINISHED'}
 
 #選択したモデルの所属するコレクションをハイド
-class CYATOOLS_OT_collections_hide(Operator):
+class CYATOOLSSUB_OT_collections_hide(Operator):
     """選択したオブジェクトが属するコレクションをハイド"""
     bl_idname = "cyatoolssub.collections_hide"
     bl_label = "hide"
@@ -149,7 +125,7 @@ class CYATOOLS_OT_collections_hide(Operator):
         return {'FINISHED'}
 
 # #現在のコレクション表示状態を保持する
-class CYATOOLS_OT_preserve_collections(Operator):
+class CYATOOLSSUB_OT_preserve_collections(Operator):
     """現在のコレクション表示状態を保持する"""
     bl_idname = "cyatoolssub.preserve_collections"
     bl_label = ""
@@ -158,14 +134,72 @@ class CYATOOLS_OT_preserve_collections(Operator):
         return {'FINISHED'}
 
 
+#---------------------------------------------------------------------------------------
+#
+#CC3パイプラインツール
+#
+#---------------------------------------------------------------------------------------
+
+class CYATOOLSSUB_OT_save_textures(Operator):
+    bl_idname = "cyatoolssub.save_textures"
+    bl_label = "save textures"
+
+    #filepath : bpy.props.StringProperty(subtype="FILE_PATH")
+    #filename : StringProperty()
+    directory : StringProperty(subtype="FILE_PATH")
+
+    def execute(self, context):
+        cc3pipeline.save_textures(self.directory)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+
+#テクスチャを１マテリアルに集める
+class CYATOOLSSUB_OT_collect_textures(Operator):
+    """新規マテリアルを生成してテクスチャを集める"""
+    bl_idname = "cyatoolssub.collect_textures"
+    bl_label = "collect textures"
+    def execute(self, context):
+        cc3pipeline.collect_textures()
+        return {'FINISHED'}
+
+
+#UVの保存
+class CYATOOLSSUB_OT_save_uv(Operator):
+    """新規マテリアルを生成してテクスチャを集める"""
+    bl_idname = "cyatoolssub.save_uv"
+    bl_label = "save uv"
+    def execute(self, context):
+        cc3pipeline.save_uv()
+        return {'FINISHED'}
+
+#UVの保存
+class CYATOOLSSUB_OT_load_uv(Operator):
+    """新規マテリアルを生成してテクスチャを集める"""
+    bl_idname = "cyatoolssub.load_uv"
+    bl_label = "load uv"
+    def execute(self, context):
+        cc3pipeline.load_uv()
+        return {'FINISHED'}
+
 
 
 classes = (
     CYATOOLSSUB_Props_OA,
     CYATOOLSSUB_PT_toolPanel,
-    CYATOOLSSUB_OT_instance_invert_last_selection,
-    CYATOOLS_OT_collections_hide,
-    CYATOOLS_OT_preserve_collections,    
+    #CYATOOLSSUB_OT_instance_invert_last_selection,
+    CYATOOLSSUB_OT_collections_hide,
+    CYATOOLSSUB_OT_preserve_collections,
+
+    CYATOOLSSUB_OT_collect_textures,
+    CYATOOLSSUB_OT_save_textures,
+
+    CYATOOLSSUB_OT_save_uv,
+    CYATOOLSSUB_OT_load_uv,
 )
 
 
@@ -179,4 +213,3 @@ def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
     del bpy.types.Scene.cyatoolssub_oa
-    

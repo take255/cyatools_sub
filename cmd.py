@@ -12,7 +12,7 @@ imp.reload(utils)
 #---------------------------------------------------------------------------------------
 #Invert selected object using last selection.
 #---------------------------------------------------------------------------------------
-def invert_last_selection():    
+def invert_last_selection():
     amt = utils.getActiveObj()
     selected = utils.selected()
     matrix = Matrix(amt.matrix_world)
@@ -49,6 +49,6 @@ def show_collection_by_name(layer ,name , state):
     if children != None:
         for ly in children:
             if name == ly.name:
-                ly.hide_viewport = state                
+                ly.hide_viewport = state
 
             show_collection_by_name(ly , name , state)

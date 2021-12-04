@@ -50,16 +50,16 @@ def tgl_constraint(self,context):
 
             #muteオンオフだけではコンストレインがアップデートされない問題
             #この行の追加で解消
-            const.influence = 1.0 
+            const.influence = 1.0
 
 
-    #表示されているならセレクトする    
-    for ob in bpy.data.objects: 
-        if ob.parent in selected: 
+    #表示されているならセレクトする
+    for ob in bpy.data.objects:
+        if ob.parent in selected:
             if bpy.data.objects[ob.name].visible_get():
                 utils.select(ob,True)
-            #children.append(ob) 
-        
+            #children.append(ob)
+
     if props.focus_bool:
         bpy.ops.view3d.view_selected(use_all_regions = False)
 
@@ -72,7 +72,7 @@ def tgl_constraint(self,context):
 #ＯＮで現在の表示状態を保持しておき選択モデルと子供だけ表示、ＯＦＦでもとに戻す
 #---------------------------------------------------------------------------------------
 def tgl_child(self,context):
-    props = bpy.context.scene.cyatools_oa    
+    props = bpy.context.scene.cyatools_oa
     selected = utils.selected()
 
     #選択以外をハイド
@@ -83,21 +83,21 @@ def tgl_child(self,context):
             if bpy.data.objects[ob.name].visible_get():
                 props.displayed_allobjs.add().name = ob.name
 
-                if not ob in selected: 
-                    if not isParent(ob , selected): 
+                if not ob in selected:
+                    if not isParent(ob , selected):
                         ob.hide_viewport = True
                     else:
                         utils.select(ob,True)
-                
-    
+
+
     #表示をもとに戻す
     else:
         for ob in props.displayed_allobjs:
             bpy.data.objects[ob.name].hide_viewport = False
             #utils.select(ob,True)
 
-        if not ob in selected: 
-            if isParent(ob , selected): 
+        if not ob in selected:
+            if isParent(ob , selected):
                 utils.selectByName(ob,True)
 
     if props.focus_bool:
@@ -123,7 +123,7 @@ def tgl_collection(self,context):
 
     props = bpy.context.scene.cyatools_oa
 
-    #選択されているオブジェクトのコレクション名    
+    #選択されているオブジェクトのコレクション名
     colname_selected = [x.name for x in act.users_collection]
     cols = [x.name for x in props.displayed_allcollections]
 
@@ -139,7 +139,7 @@ def tgl_collection(self,context):
                 p = tgl_collection_dic[ parent_name ]
                 parent_name = p[0]
                 p[1].hide_viewport = False
-                
+
     #表示をもとに戻す
     else:
         tgl_show_collections_loop(lc)
@@ -171,7 +171,7 @@ def tgl_show_collections_loop(col):
     props = bpy.context.scene.cyatools_oa
     children = col.children
 
-    
+
     if children != None:
         for c in children:
             if c.name in props.displayed_allcollections:
